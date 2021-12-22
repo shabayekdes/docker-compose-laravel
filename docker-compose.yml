@@ -27,6 +27,8 @@ services:
       MYSQL_PASSWORD: secret
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
+    ports:
+      - "3306:3306"
     networks:
       - laravel
 
