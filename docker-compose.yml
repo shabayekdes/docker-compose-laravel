@@ -43,7 +43,17 @@ services:
       - ./nginx:/etc/nginx/conf.d
     networks:
       - laravel
-
+  composer:
+    image: composer:2
+    container_name: mobilaty_composer
+    working_dir: /var/www/html
+    depends_on:
+      - app
+    entrypoint: ['composer', '--ignore-platform-reqs']
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - laravel
 networks:
   laravel:
     driver: bridge
