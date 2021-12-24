@@ -43,9 +43,10 @@ services:
       - ./nginx:/etc/nginx/conf.d
     networks:
       - laravel
+
   composer:
     image: composer:2
-    container_name: mobilaty_composer
+    container_name: composer
     working_dir: /var/www/html
     depends_on:
       - app
@@ -54,6 +55,20 @@ services:
       - ./src:/var/www/html
     networks:
       - laravel
+
+  npm:
+    image: node:16.13
+    container_name: npm
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - 3000:3000
+      - 3001:3001
+    working_dir: /var/www/html
+    entrypoint: ['npm']
+    networks:
+      - laravel
+      
 networks:
   laravel:
     driver: bridge
