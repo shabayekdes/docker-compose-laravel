@@ -11,8 +11,11 @@ services:
     container_name: app
     restart: unless-stopped
     working_dir: /var/www/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./src:/var/www
+      - ./config/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
     networks:
       - laravel
 
@@ -23,8 +26,8 @@ services:
     env_file:
       - ./src/.env
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-homesteat}
-      MYSQL_USER: ${DB_USERNAME:-homesteat}
+      MYSQL_DATABASE: ${DB_DATABASE:-homestead}
+      MYSQL_USER: ${DB_USERNAME:-homestead}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
       SERVICE_TAGS: dev
@@ -38,6 +41,8 @@ services:
     image: nginx:alpine
     container_name: nginx
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8080:80"
     volumes:
