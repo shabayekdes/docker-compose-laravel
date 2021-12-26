@@ -1,4 +1,9 @@
 version: "3.7"
+      
+networks:
+  laravel:
+    driver: bridge
+
 services:
   app:
     build:
@@ -50,6 +55,7 @@ services:
       - ./nginx:/etc/nginx/conf.d
     networks:
       - laravel
+      
   redis:
     image: redis:alpine
     container_name: redis
@@ -100,7 +106,12 @@ services:
     entrypoint: ['php', '/var/www/html/artisan']
     networks:
       - laravel
-      
-networks:
-  laravel:
-    driver: bridge
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - laravel
