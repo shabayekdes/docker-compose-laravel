@@ -1,81 +1,117 @@
-version: '3'
-
+version: "3.7"
+      
 networks:
   laravel:
+    driver: bridge
 
 services:
-  nginx:
-    image: nginx:stable-alpine
-    container_name: nginx_one
-    ports:
-      - "8081:80"
+  app:
+    build:
+      args:
+        user: shabayek
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: docker-laravel
+    container_name: laravel-docker-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
-      - ./src:/var/www/html
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - php
-      - mysql
+      - ./src:/var/www
+      - ./config/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
     networks:
       - laravel
 
-  mysql:
-    image: mysql:5.7.29
-    container_name: mysql
+  db:
+    image: mysql:5.7
+    container_name: laravel-docker-db
     restart: unless-stopped
-    tty: true
-    ports:
-      - "3307:3306"
+    env_file:
+      - ./src/.env
     environment:
-      MYSQL_DATABASE: homestead
-      MYSQL_USER: homestead
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: ${DB_DATABASE:-homestead}
+      MYSQL_USER: ${DB_USERNAME:-homestead}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
+    ports:
+      - "3307:3306"
     networks:
       - laravel
 
-  php:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: php
-    volumes:
-      - ./src:/var/www/html
+  nginx:
+    image: nginx:alpine
+    container_name: laravel-docker-nginx
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      - "9001:9000"
+      - "8080:80"
+    volumes:
+      - ./src:/var/www
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - laravel
+      
+  redis:
+    image: redis:alpine
+    container_name: laravel-docker-redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
     networks:
       - laravel
 
   composer:
     image: composer:latest
-    container_name: composer
-    volumes:
-      - ./src:/var/www/html
+    container_name: laravel-docker-composer
     working_dir: /var/www/html
     depends_on:
-      - php
+      - app
+    entrypoint: ['composer', '--ignore-platform-reqs']
+    volumes:
+      - ./src:/var/www/html
     networks:
       - laravel
 
   npm:
-    image: node:13.7
-    container_name: npm
+    image: node:16.13
+    container_name: laravel-docker-npm
     volumes:
       - ./src:/var/www/html
+    ports:
+      - 3000:3000
+      - 3001:3001
     working_dir: /var/www/html
     entrypoint: ['npm']
+    networks:
+      - laravel
 
   artisan:
     build:
-      context: .
+      args:
+        user: shabayek
+        uid: 1000
+      context: ./
       dockerfile: Dockerfile
-    container_name: artisan
+    container_name: laravel-docker-artisan
     volumes:
-      - ./src:/var/www/html
+      - ./src:/var/www/html:delegated
     depends_on:
-      - mysql
+      - db
     working_dir: /var/www/html
-    entrypoint: ['/var/www/html/artisan']
+    entrypoint: ['php', '/var/www/html/artisan']
+    networks:
+      - laravel
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: laravel-docker-mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
     networks:
       - laravel
