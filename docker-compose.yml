@@ -8,7 +8,7 @@ networks:
 # Services
 services:
   # PHP-FPM Service
-  app:
+  php:
     build:
       args:
         user: shabayek
@@ -16,10 +16,12 @@ services:
       context: ./.docker/php
       dockerfile: Dockerfile
     image: docker-laravel
-    container_name: laravel-docker-app
+    container_name: laravel-docker-php
     restart: unless-stopped
     working_dir: /var/www/
     links:
+      - mysql
+    depends_on:
       - mysql
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -37,6 +39,9 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - php
+      - phpmyadmin
     ports:
       - "8080:80"
     volumes:
@@ -71,8 +76,7 @@ services:
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: laravel-docker-pma
-    depends_on:
-      - mysql
+    restart: always
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
@@ -80,7 +84,8 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret} #(Required) set the password for the root superuser account.
       PMA_USER: root # this is the root user to login on startup
       PMA_PASSWORD: ${DB_PASSWORD:-secret} # use the root password to login on startup.
-    restart: always
+    depends_on:
+      - mysql
     ports:
       - 8081:80
     networks:
@@ -100,7 +105,7 @@ services:
     container_name: laravel-docker-composer
     working_dir: /var/www/html
     depends_on:
-      - app
+      - php
     entrypoint: [ 'composer', '--ignore-platform-reqs' ]
     volumes:
       - ./src:/var/www/html
@@ -108,7 +113,7 @@ services:
       - laravel
 
   npm:
-    image: node:16.13
+    image: node:16-alpine
     container_name: laravel-docker-npm
     volumes:
       - ./src:/var/www/html
