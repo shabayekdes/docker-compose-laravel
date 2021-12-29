@@ -1,7 +1,7 @@
 version: "3.7"
-      
+
 networks:
-  laravel:
+  laravel: null
   app-shard:
     driver: bridge
 
@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
     working_dir: /var/www/
     links:
-      - db 
+      - db
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -29,9 +29,9 @@ services:
       - app-shard
 
   db:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: laravel-docker-db
-    restart: unless-stopped
+    restart: always
     env_file:
       - ./src/.env
     environment:
@@ -78,7 +78,7 @@ services:
     networks:
       - laravel
       - app-shard
-      
+
   redis:
     image: redis:alpine
     container_name: laravel-docker-redis
@@ -94,7 +94,7 @@ services:
     working_dir: /var/www/html
     depends_on:
       - app
-    entrypoint: ['composer', '--ignore-platform-reqs']
+    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
     volumes:
       - ./src:/var/www/html
     networks:
@@ -109,7 +109,7 @@ services:
       - 3000:3000
       - 3001:3001
     working_dir: /var/www/html
-    entrypoint: ['npm']
+    entrypoint: [ 'npm' ]
     networks:
       - laravel
 
@@ -126,7 +126,7 @@ services:
     depends_on:
       - db
     working_dir: /var/www/html
-    entrypoint: ['php', '/var/www/html/artisan']
+    entrypoint: [ 'php', '/var/www/html/artisan' ]
     networks:
       - laravel
 
