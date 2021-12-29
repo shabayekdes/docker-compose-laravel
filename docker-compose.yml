@@ -8,7 +8,7 @@ networks:
 # Services
 services:
   # PHP-FPM Service
-  app:
+  php:
     build:
       args:
         user: shabayek
@@ -16,7 +16,7 @@ services:
       context: ./.docker/php
       dockerfile: Dockerfile
     image: docker-laravel
-    container_name: laravel-docker-app
+    container_name: laravel-docker-php
     restart: unless-stopped
     working_dir: /var/www/
     links:
@@ -100,7 +100,7 @@ services:
     container_name: laravel-docker-composer
     working_dir: /var/www/html
     depends_on:
-      - app
+      - php
     entrypoint: [ 'composer', '--ignore-platform-reqs' ]
     volumes:
       - ./src:/var/www/html

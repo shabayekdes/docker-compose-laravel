@@ -21,8 +21,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libzip-dev
-RUN docker-php-ext-install zip
-RUN docker-php-ext-install pdo mysqli pdo_mysql mbstring exif pcntl bcmath gd 
+RUN docker-php-ext-install pdo mysqli pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Xdebug
 RUN pecl install xdebug \
