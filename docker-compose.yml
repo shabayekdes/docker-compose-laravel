@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     working_dir: /var/www/
     links:
-      - db
+      - mysql
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -46,9 +46,10 @@ services:
       - laravel
       - app-shard
 
-  db:
+  # Mysql Service
+  mysql:
     image: mysql:8.0
-    container_name: laravel-docker-db
+    container_name: laravel-docker-mysql
     restart: always
     env_file:
       - ./src/.env
@@ -59,6 +60,9 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
+    volumes:
+      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - mysqldata:/var/lib/mysql
     ports:
       - "3307:3306"
     networks:
@@ -68,9 +72,9 @@ services:
     image: phpmyadmin/phpmyadmin
     container_name: laravel-docker-pma
     depends_on:
-      - db
+      - mysql
     environment:
-      PMA_HOST: db
+      PMA_HOST: mysql
       PMA_PORT: 3306
       PMA_ARBITRARY: 1
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret} #(Required) set the password for the root superuser account.
@@ -127,7 +131,7 @@ services:
     volumes:
       - ./src:/var/www/html:delegated
     depends_on:
-      - db
+      - mysql
     working_dir: /var/www/html
     entrypoint: [ 'php', '/var/www/html/artisan' ]
     networks:
@@ -141,3 +145,7 @@ services:
       - 8025:8025
     networks:
       - laravel
+
+# Volumes
+volumes:
+  mysqldata: null
