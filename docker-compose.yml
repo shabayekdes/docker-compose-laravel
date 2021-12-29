@@ -1,156 +1,163 @@
 version: "3.9"
 
 networks:
-  laravel: null
-  app-shard:
-    driver: bridge
+    laravel: null
+    app-shard:
+        driver: bridge
 
 # Services
 services:
-  # PHP-FPM Service
-  php:
-    build:
-      args:
-        user: shabayek
-        uid: 1000
-      context: ./.docker/php
-      dockerfile: Dockerfile
-    image: docker-laravel
-    container_name: laravel-docker-php
-    restart: unless-stopped
-    working_dir: /var/www/
-    links:
-      - mysql
-    depends_on:
-      - mysql
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - ./src:/var/www
-      - ./.docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-    networks:
-      - laravel
-      - app-shard
+    # PHP-FPM Service
+    php:
+        build:
+            args:
+                user: shabayek
+                uid: 1000
+            context: ./.docker/php
+            dockerfile: Dockerfile
+        image: docker-laravel
+        container_name: laravel-docker-php
+        restart: unless-stopped
+        working_dir: /var/www/
+        links:
+            - mysql
+        depends_on:
+            - mysql
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        volumes:
+            - ./src:/var/www
+            - ./.docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+        networks:
+            - laravel
+            - app-shard
 
-  # Nginx Service
-  nginx:
-    image: nginx:alpine
-    container_name: laravel-docker-nginx
-    restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      - php
-      - phpmyadmin
-    ports:
-      - "8080:80"
-    volumes:
-      - ./src:/var/www
-      - ./.docker/nginx/conf.d:/etc/nginx/conf.d
-    networks:
-      - laravel
-      - app-shard
+    # Nginx Service
+    nginx:
+        image: nginx:alpine
+        container_name: laravel-docker-nginx
+        restart: unless-stopped
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        depends_on:
+            - php
+            - phpmyadmin
+        ports:
+            - "8080:80"
+        volumes:
+            - ./src:/var/www
+            - ./.docker/nginx/conf.d:/etc/nginx/conf.d
+        networks:
+            - laravel
+            - app-shard
 
-  # Mysql Service
-  mysql:
-    image: mysql:8.0
-    container_name: laravel-docker-mysql
-    restart: always
-    env_file:
-      - ./src/.env
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-homestead}
-      MYSQL_USER: ${DB_USERNAME:-homestead}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
-    volumes:
-      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
-      - mysqldata:/var/lib/mysql
-    ports:
-      - "3307:3306"
-    networks:
-      - laravel
+    # Mysql Service
+    mysql:
+        image: mysql:8.0
+        container_name: laravel-docker-mysql
+        restart: always
+        env_file:
+            - ./src/.env
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE:-homestead}
+            MYSQL_USER: ${DB_USERNAME:-homestead}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+            MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        volumes:
+            - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+            - mysqldata:/var/lib/mysql
+        ports:
+            - "3307:3306"
+        networks:
+            - laravel
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: laravel-docker-pma
-    restart: always
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_ARBITRARY: 1
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret} #(Required) set the password for the root superuser account.
-      PMA_USER: root # this is the root user to login on startup
-      PMA_PASSWORD: ${DB_PASSWORD:-secret} # use the root password to login on startup.
-    depends_on:
-      - mysql
-    ports:
-      - 8081:80
-    networks:
-      - laravel
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: laravel-docker-pma
+        restart: always
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            PMA_ARBITRARY: 1
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret} #(Required) set the password for the root superuser account.
+            PMA_USER: root # this is the root user to login on startup
+            PMA_PASSWORD: ${DB_PASSWORD:-secret} # use the root password to login on startup.
+        depends_on:
+            - mysql
+        ports:
+            - 8081:80
+        networks:
+            - laravel
 
-  redis:
-    image: redis:alpine
-    container_name: laravel-docker-redis
-    restart: unless-stopped
-    ports:
-      - 6379:6379
-    networks:
-      - laravel
+    redis:
+        image: redis:alpine
+        container_name: laravel-docker-redis
+        restart: unless-stopped
+        ports:
+            - 6379:6379
+        networks:
+            - laravel
 
-  composer:
-    image: composer:latest
-    container_name: laravel-docker-composer
-    working_dir: /var/www/html
-    depends_on:
-      - php
-    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
-    volumes:
-      - ./src:/var/www/html
-    networks:
-      - laravel
+    composer:
+        image: composer:latest
+        container_name: laravel-docker-composer
+        working_dir: /var/www/html
+        depends_on:
+            - php
+        entrypoint: [ 'composer', '--ignore-platform-reqs' ]
+        volumes:
+            - ./src:/var/www/html
+        networks:
+            - laravel
 
-  npm:
-    image: node:16-alpine
-    container_name: laravel-docker-npm
-    volumes:
-      - ./src:/var/www/html
-    ports:
-      - 3000:3000
-      - 3001:3001
-    working_dir: /var/www/html
-    entrypoint: [ 'npm' ]
-    networks:
-      - laravel
+    npm:
+        image: node:16-alpine
+        container_name: laravel-docker-npm
+        volumes:
+            - ./src:/var/www/html
+        ports:
+            - 3000:3000
+            - 3001:3001
+        working_dir: /var/www/html
+        entrypoint: [ 'npm' ]
+        networks:
+            - laravel
 
-  artisan:
-    build:
-      args:
-        user: shabayek
-        uid: 1000
-      context: ./.docker/php
-      dockerfile: Dockerfile
-    container_name: laravel-docker-artisan
-    volumes:
-      - ./src:/var/www/html:delegated
-    depends_on:
-      - mysql
-    working_dir: /var/www/html
-    entrypoint: [ 'php', '/var/www/html/artisan' ]
-    networks:
-      - laravel
+    artisan:
+        build:
+            args:
+                user: shabayek
+                uid: 1000
+            context: ./.docker/php
+            dockerfile: Dockerfile
+        container_name: laravel-docker-artisan
+        volumes:
+            - ./src:/var/www/html:delegated
+        depends_on:
+            - mysql
+        working_dir: /var/www/html
+        entrypoint: [ 'php', '/var/www/html/artisan' ]
+        networks:
+            - laravel
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: laravel-docker-mailhog
-    ports:
-      - 1025:1025
-      - 8025:8025
-    networks:
-      - laravel
+    mailhog:
+        image: mailhog/mailhog:latest
+        container_name: laravel-docker-mailhog
+        ports:
+            - 1025:1025
+            - 8025:8025
+        networks:
+            - laravel
 
+    meilisearch:
+        image: getmeili/meilisearch:latest
+        container_name: laravel-docker-meilisearch
+        ports:
+            - 7700:7700
+        networks:
+            - laravel
 # Volumes
 volumes:
-  mysqldata: null
+    mysqldata: null
