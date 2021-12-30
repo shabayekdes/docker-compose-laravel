@@ -10,7 +10,7 @@ services:
     # PHP-FPM Service
     php:
         build:
-            args: 
+            args:
                 user: shabayek
                 uid: 1000
             context: ./.docker/php
@@ -47,11 +47,12 @@ services:
         volumes:
             - ./src:/var/www
             - ./.docker/nginx/conf.d:/etc/nginx/conf.d
+            - phpmyadmindata:/var/www/phpmyadmin
         networks:
             - laravel
             - app-shard
 
-    # Mysql Service
+    # MySQL Service
     mysql:
         image: mysql:8.0
         container_name: laravel-docker-mysql
@@ -73,10 +74,12 @@ services:
         networks:
             - laravel
 
+    # PhpMyAdmin Service
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         container_name: laravel-docker-pma
-        restart: always
+        depends_on:
+            - mysql
         environment:
             PMA_HOST: mysql
             PMA_PORT: 3306
@@ -84,17 +87,17 @@ services:
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret} #(Required) set the password for the root superuser account.
             PMA_USER: root # this is the root user to login on startup
             PMA_PASSWORD: ${DB_PASSWORD:-secret} # use the root password to login on startup.
-        depends_on:
-            - mysql
+        restart: always
         ports:
             - 8081:80
         networks:
             - laravel
 
+    # Redis Service
     redis:
-        image: redis:alpine
+        image: redis:6-alpine
         container_name: laravel-docker-redis
-        restart: unless-stopped
+        command: [ "redis-server", "--appendonly", "yes" ]
         ports:
             - 6379:6379
         networks:
@@ -111,7 +114,7 @@ services:
             - ./src:/var/www/html
         networks:
             - laravel
-
+    # Node Service
     npm:
         image: node:16-alpine
         container_name: laravel-docker-npm
