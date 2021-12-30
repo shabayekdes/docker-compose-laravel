@@ -13,6 +13,7 @@ services:
             args:
                 user: shabayek
                 uid: 1000
+                TZ: UTC
             context: ./.docker/php
             dockerfile: Dockerfile
         image: docker-laravel
@@ -47,7 +48,6 @@ services:
         volumes:
             - ./src:/var/www
             - ./.docker/nginx/conf.d:/etc/nginx/conf.d
-            - phpmyadmindata:/var/www/phpmyadmin
         networks:
             - laravel
             - app-shard
@@ -102,7 +102,7 @@ services:
             - 6379:6379
         networks:
             - laravel
-
+    # Composer Service
     composer:
         image: composer:latest
         container_name: laravel-docker-composer
@@ -127,7 +127,7 @@ services:
         entrypoint: [ 'npm' ]
         networks:
             - laravel
-
+    # Artisan Laravel Service
     artisan:
         build:
             args:
@@ -144,7 +144,7 @@ services:
         entrypoint: [ 'php', '/var/www/html/artisan' ]
         networks:
             - laravel
-
+    # Mailhog Service
     mailhog:
         image: mailhog/mailhog:latest
         container_name: laravel-docker-mailhog
@@ -153,12 +153,30 @@ services:
             - 8025:8025
         networks:
             - laravel
-
+    # Meilisearch Service
     meilisearch:
         image: getmeili/meilisearch:latest
         container_name: laravel-docker-meilisearch
         ports:
             - 7700:7700
+        networks:
+            - laravel
+    # RabbitMQ Service
+    rabbitmq:
+        build:
+            context: ./.docker/rabbitmq
+            dockerfile: Dockerfile
+        ports:
+            - 5672:5672
+            - 15672:15672
+            - 15671:15671
+            - 15674:15674
+        privileged: true
+        container_name: laravel-docker-rabbitmq
+        volumes:
+            - ./.docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+        depends_on:
+            - php
         networks:
             - laravel
 # Volumes
